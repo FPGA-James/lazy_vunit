@@ -179,8 +179,8 @@ func (w *WindowModel) applyRunningFallback(s tree.Status) {
 	if w.Tree == nil {
 		return
 	}
-	for _, node := range w.Tree.Visible() {
-		if node.Kind == tree.TestNode && node.Status == tree.Running {
+	for _, node := range w.Tree.AllLeaves() {
+		if node.Status == tree.Running {
 			w.Tree.SetStatus(node.FullName, s)
 		}
 	}
@@ -191,10 +191,7 @@ func (w *WindowModel) saveResults() {
 		return
 	}
 	now := time.Now().UTC()
-	for _, node := range w.Tree.Visible() {
-		if node.Kind != tree.TestNode {
-			continue
-		}
+	for _, node := range w.Tree.AllLeaves() {
 		switch node.Status {
 		case tree.Passed:
 			w.Results[node.FullName] = persist.Result{Status: "pass", RanAt: now}
@@ -211,10 +208,7 @@ func (w *WindowModel) Counts() (int, int, int) {
 		return 0, 0, 0
 	}
 	var p, f, n int
-	for _, node := range w.Tree.Visible() {
-		if node.Kind != tree.TestNode {
-			continue
-		}
+	for _, node := range w.Tree.AllLeaves() {
 		switch node.Status {
 		case tree.Passed:
 			p++

@@ -56,6 +56,11 @@ func (m AppModel) Init() tea.Cmd {
 }
 
 func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Clear transient status message each update cycle so it shows for exactly one frame.
+	if len(m.windows) > 0 {
+		m.activeWin().StatusMsg = ""
+	}
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.termWidth, m.termHeight = msg.Width, msg.Height

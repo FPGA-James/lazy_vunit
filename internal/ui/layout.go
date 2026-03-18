@@ -136,7 +136,6 @@ func renderBottomBar(m AppModel, width int) string {
 
 	if win.StatusMsg != "" {
 		hints = StyleFailed.Render(" " + win.StatusMsg)
-		win.StatusMsg = "" // clear after render
 	}
 
 	bar := lipgloss.NewStyle().

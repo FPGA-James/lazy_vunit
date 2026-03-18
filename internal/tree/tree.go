@@ -192,6 +192,25 @@ func collectLeafNames(n *Node) []string {
 	return names
 }
 
+// AllLeaves returns all TestNode leaves in the tree, regardless of expand/collapse state.
+func (t *Tree) AllLeaves() []*Node {
+	var result []*Node
+	for _, r := range t.Roots {
+		collectAllLeaves(r, &result)
+	}
+	return result
+}
+
+func collectAllLeaves(n *Node, out *[]*Node) {
+	if n.Kind == TestNode {
+		*out = append(*out, n)
+		return
+	}
+	for _, c := range n.Children {
+		collectAllLeaves(c, out)
+	}
+}
+
 func (t *Tree) SetStatus(fullName string, s Status) {
 	for _, r := range t.Roots {
 		if setStatusInNode(r, fullName, s) {
