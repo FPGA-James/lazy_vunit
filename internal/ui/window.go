@@ -119,8 +119,9 @@ func (w *WindowModel) StartRun(guiMode bool) tea.Cmd {
 	w.State = WinStateRunning
 
 	const batchSize = 200
-	firstCmd, cancelFn, _, remaining := runner.RunBatched(w.Script.AbsPath, args, batchSize)
+	firstCmd, cancelFn, ch, remaining := runner.RunBatched(w.Script.AbsPath, args, batchSize)
 	w.CancelFn = cancelFn
+	w.RunnerCh = ch
 	w.PendingArgs = remaining
 
 	return firstCmd
@@ -131,10 +132,10 @@ func (w *WindowModel) HandleRunnerMsg(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
 	case runner.OutputLineMsg:
 		w.Output = append(w.Output, m.Text)
-		return nil
+		return runner.NextMsg(w.RunnerCh)
 	case runner.StatusUpdateMsg:
 		w.Tree.SetStatus(m.TestName, m.Status)
-		return nil
+		return runner.NextMsg(w.RunnerCh)
 	case runner.RunDoneMsg:
 		// Apply exit-code fallback only to tests in the current batch (still Running)
 		fallbackStatus := tree.Passed
@@ -145,8 +146,9 @@ func (w *WindowModel) HandleRunnerMsg(msg tea.Msg) tea.Cmd {
 
 		// Start next batch if pending
 		if len(w.PendingArgs) > 0 {
-			firstCmd, cancelFn, _, remaining := runner.RunBatched(w.Script.AbsPath, w.PendingArgs, 200)
+			firstCmd, cancelFn, ch, remaining := runner.RunBatched(w.Script.AbsPath, w.PendingArgs, 200)
 			w.CancelFn = cancelFn
+			w.RunnerCh = ch
 			w.PendingArgs = remaining
 			w.Output = append(w.Output, "── batch complete, continuing ──")
 			return firstCmd
