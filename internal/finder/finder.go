@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -61,6 +62,9 @@ func FindRunScripts(root string) ([]RunScript, error) {
 		}
 	}
 
+	sort.Slice(scripts, func(i, j int) bool {
+		return scripts[i].RelDir < scripts[j].RelDir
+	})
 	return scripts, nil
 }
 
