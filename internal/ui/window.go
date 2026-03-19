@@ -173,7 +173,7 @@ func (w *WindowModel) StartRun(guiMode bool) tea.Cmd {
 		return nil
 	}
 	if guiMode && node.Kind != tree.TestNode {
-		w.StatusMsg = "GUI mode requires a single test — navigate to a test case"
+		w.Output = append(w.Output, "! GUI mode requires a single test — navigate to a leaf test node (✓/✗/○)")
 		return nil
 	}
 

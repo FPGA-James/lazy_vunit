@@ -51,10 +51,22 @@ func Run(runPy string, args []string) (tea.Cmd, CancelFunc, <-chan tea.Msg) {
 		if err != nil {
 			return RunDoneMsg{Err: err}
 		}
-		// Leave cmd.Stderr nil — VUnit writes useful output to stdout.
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			return RunDoneMsg{Err: err}
+		}
 		if err := cmd.Start(); err != nil {
 			return RunDoneMsg{Err: err}
 		}
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			scanner := bufio.NewScanner(stderr)
+			for scanner.Scan() {
+				ch <- OutputLineMsg{Text: scanner.Text()}
+			}
+		}()
 		go func() {
 			scanner := bufio.NewScanner(stdout)
 			var prevLine string
@@ -66,6 +78,7 @@ func Run(runPy string, args []string) (tea.Cmd, CancelFunc, <-chan tea.Msg) {
 				}
 				prevLine = line
 			}
+			wg.Wait() // ensure all stderr lines are sent before RunDoneMsg
 			err := cmd.Wait()
 			ch <- RunDoneMsg{Err: err}
 			close(ch)
