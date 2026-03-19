@@ -59,6 +59,9 @@ func renderHeader(m AppModel, width int) string {
 	if s.XUnitXML {
 		flags = append(flags, StylePassed.Render("xunit"))
 	}
+	if s.OutputPath != "" {
+		flags = append(flags, StyleSubtle.Render("out:"+s.OutputPath))
+	}
 
 	title := fmt.Sprintf(" lazy_vunit — %s  [%s]", m.gitRoot, win.DisplayName())
 	if len(flags) > 0 {
@@ -190,7 +193,33 @@ func RenderSettings(m AppModel) string {
 		}
 		sb.WriteString(row + "\n")
 	}
-	sb.WriteString("\n" + StyleSubtle.Render("  ↑/↓ navigate  space toggle  s close"))
+	// output-path row — index SettingCount() (6), rendered separately (no checkbox)
+	{
+		valueStr := s.OutputPath
+		placeholder := valueStr == ""
+		if placeholder {
+			valueStr = "vunit_out"
+		}
+		if m.EditingPath() {
+			valueStr = m.PathBuf() + "█"
+		}
+		var displayVal string
+		if placeholder && !m.EditingPath() {
+			displayVal = StyleSubtle.Render(valueStr)
+		} else {
+			displayVal = valueStr
+		}
+		row := fmt.Sprintf("  %-16s %-22s %s", "output-path", displayVal, StyleSubtle.Render("relative to git root"))
+		if cursor == SettingCount() {
+			row = StyleCursor.Render(row)
+		}
+		sb.WriteString(row + "\n")
+	}
+	if m.EditingPath() {
+		sb.WriteString("\n" + StyleSubtle.Render("  enter confirm  esc cancel"))
+	} else {
+		sb.WriteString("\n" + StyleSubtle.Render("  ↑/↓ navigate  space toggle/edit  s close"))
+	}
 
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -309,7 +338,7 @@ func renderBottomBar(m AppModel, width int) string {
 		StyleNotRun.Render(fmt.Sprintf("○ %d", an)),
 	)
 
-	hints := StyleSubtle.Render(" space run  g gui  [ ]  ctrl+r  s settings  q quit  ? help")
+	hints := StyleSubtle.Render("  │  space run  g gui  [ ]  ctrl+r  s settings  q quit  ? help")
 
 	if win.StatusMsg != "" {
 		hints = StyleFailed.Render(" " + win.StatusMsg)
