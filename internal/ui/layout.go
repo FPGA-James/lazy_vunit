@@ -167,7 +167,7 @@ var settingItems = []settingItem{
 	{"compile only", "compile only, skip simulation", func(s persist.Settings) bool { return s.CompileOnly }},
 	{"elaborate only", "elaborate only, skip simulation", func(s persist.Settings) bool { return s.ElaborateOnly }},
 	{"fail fast", "stop on first failure", func(s persist.Settings) bool { return s.FailFast }},
-	{"xunit xml", "write report to .lazyvunit/<key>.xml", func(s persist.Settings) bool { return s.XUnitXML }},
+	{"xunit xml", "write report to .lazyvunit/<key>_report.xml", func(s persist.Settings) bool { return s.XUnitXML }},
 }
 
 // RenderSettings renders the settings toggles as a floating box over the main layout.
@@ -309,7 +309,7 @@ func renderBottomBar(m AppModel, width int) string {
 		StyleNotRun.Render(fmt.Sprintf("○ %d", an)),
 	)
 
-	hints := StyleSubtle.Render(" space run  g gui  [ ]  ctrl+r  q quit  ? help")
+	hints := StyleSubtle.Render(" space run  g gui  [ ]  ctrl+r  s settings  q quit  ? help")
 
 	if win.StatusMsg != "" {
 		hints = StyleFailed.Render(" " + win.StatusMsg)

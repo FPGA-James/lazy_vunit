@@ -12,22 +12,22 @@ import (
 type AppStateKind int
 
 const (
-	StatePicker   AppStateKind = iota
+	StatePicker AppStateKind = iota
 	StateScanning
 	StateMain
 	StateError
 )
 
 type AppModel struct {
-	state      AppStateKind
-	picker     PickerModel
-	windows    []WindowModel
-	activeIdx  int
-	gitRoot    string
-	termWidth  int
-	termHeight int
-	showHelp      bool
-	showSettings  bool
+	state          AppStateKind
+	picker         PickerModel
+	windows        []WindowModel
+	activeIdx      int
+	gitRoot        string
+	termWidth      int
+	termHeight     int
+	showHelp       bool
+	showSettings   bool
 	settingsCursor int
 }
 

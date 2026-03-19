@@ -28,18 +28,18 @@ type WindowModel struct {
 	Script      finder.RunScript
 	AllScripts  []finder.RunScript // for display name resolution
 	GitRoot     string
-	LazyDir     string             // path to .lazyvunit/ directory
+	LazyDir     string // path to .lazyvunit/ directory
 	State       WindowState
 	Tree        *tree.Tree
-	Output      []string           // lines of terminal output
-	OutputTitle string             // test name or dir name shown in output pane header
+	Output      []string // lines of terminal output
+	OutputTitle string   // test name or dir name shown in output pane header
 	ErrMsg      string
-	StatusMsg   string             // transient bottom-bar message
+	StatusMsg   string // transient bottom-bar message
 	RunnerCh    <-chan tea.Msg
 	CancelFn    runner.CancelFunc
-	PendingArgs []string           // remaining batch args
+	PendingArgs []string // remaining batch args
 	Results     persist.Store
-	Settings    persist.Settings  // per-window VUnit run flags
+	Settings    persist.Settings // per-window VUnit run flags
 }
 
 func NewWindowModel(script finder.RunScript, allScripts []finder.RunScript, gitRoot string) WindowModel {
