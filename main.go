@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/lazyvunit/lazy_vunit/internal/finder"
@@ -24,10 +26,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Filter to scripts at or below cwd
+	var filtered []finder.RunScript
+	for _, s := range scripts {
+		rel, err := filepath.Rel(cwd, s.AbsPath)
+		if err == nil && !strings.HasPrefix(rel, "..") {
+			filtered = append(filtered, s)
+		}
+	}
+	scripts = filtered
+
 	if len(scripts) == 0 {
 		fmt.Fprintf(os.Stderr,
 			"No VUnit run script found.\nSearched: %s\n\nExpected a run.py containing VUnit.from_argv.\n",
-			gitRoot)
+			cwd)
 		os.Exit(1)
 	}
 
