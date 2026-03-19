@@ -33,6 +33,7 @@ type AppModel struct {
 	settingsCursor int
 	editingPath    bool
 	pathBuf        string
+	fullOutput     bool
 }
 
 func NewAppModel(scripts []finder.RunScript, gitRoot, cwd string) AppModel {
@@ -66,6 +67,7 @@ func (m AppModel) ActiveSettings() persist.Settings {
 
 func (m AppModel) EditingPath() bool { return m.editingPath }
 func (m AppModel) PathBuf() string   { return m.pathBuf }
+func (m AppModel) FullOutput() bool  { return m.fullOutput }
 
 func (m AppModel) Init() tea.Cmd {
 	if m.state == StateScanning && len(m.windows) > 0 {
@@ -253,6 +255,9 @@ func (m AppModel) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.activeWin().State == WinStateRunning {
 			m.activeWin().Cancel()
 		}
+
+	case key.Matches(msg, keys.FullOutput):
+		m.fullOutput = !m.fullOutput
 	}
 
 	return m, nil

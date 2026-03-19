@@ -23,15 +23,21 @@ func RenderMain(m AppModel) string {
 		totalHeight = 40
 	}
 
-	treeWidth := totalWidth * 38 / 100
-	outputWidth := totalWidth - treeWidth - 3
 	innerHeight := totalHeight - 4 // header + bottom bar
-
 	header := renderHeader(m, totalWidth)
-	treePane := renderTree(w, treeWidth, innerHeight)
-	outputPane := renderOutput(w, outputWidth, innerHeight)
-	body := lipgloss.JoinHorizontal(lipgloss.Top, treePane, outputPane)
 	bottomBar := renderBottomBar(m, totalWidth)
+
+	var body string
+	if m.fullOutput {
+		outputPane := renderOutput(w, totalWidth, innerHeight)
+		body = outputPane
+	} else {
+		treeWidth := totalWidth * 38 / 100
+		outputWidth := totalWidth - treeWidth - 3
+		treePane := renderTree(w, treeWidth, innerHeight)
+		outputPane := renderOutput(w, outputWidth, innerHeight)
+		body = lipgloss.JoinHorizontal(lipgloss.Top, treePane, outputPane)
+	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, header, body, bottomBar)
 }
@@ -342,7 +348,11 @@ func renderBottomBar(m AppModel, width int) string {
 		StyleNotRun.Render(fmt.Sprintf("○ %d", an)),
 	)
 
-	hints := StyleSubtle.Render("  │  space run  g gui  [ ]  ctrl+r  s settings  q quit  ? help")
+	hintText := "  │  space run  g gui  o expand  [ ]  ctrl+r  s settings  q quit  ? help"
+	if m.fullOutput {
+		hintText = "  │  o collapse  q quit"
+	}
+	hints := StyleSubtle.Render(hintText)
 
 	if win.StatusMsg != "" {
 		hints = StyleFailed.Render(" " + win.StatusMsg)
