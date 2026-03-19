@@ -1,5 +1,9 @@
 # lazy_vunit
 
+<p align="center">
+  <img src="docs/logo.svg" alt="lazy_vunit logo" width="520"/>
+</p>
+
 > **Personal tool — use at your own risk.**
 > This was built for my own HDL simulation workflow. It works for me, but it has not been tested across a wide range of setups, simulators, or VUnit configurations. Pull it apart, adapt it, but don't expect polish or support.
 
