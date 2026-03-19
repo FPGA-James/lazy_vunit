@@ -68,3 +68,44 @@ func EnsureGitignore(gitRoot string) error {
 	_, err = f.WriteString(entry)
 	return err
 }
+
+// Settings holds per-window VUnit run flags.
+type Settings struct {
+	Clean         bool `json:"clean"`
+	Verbose       bool `json:"verbose"`
+	CompileOnly   bool `json:"compile_only"`
+	ElaborateOnly bool `json:"elaborate_only"`
+	FailFast      bool `json:"fail_fast"`
+	XUnitXML      bool `json:"xunit_xml"`
+}
+
+// LoadSettings reads .lazyvunit/<windowKey>_settings.json.
+// If the file does not exist it writes defaults and returns them.
+func LoadSettings(lazyvunitDir, windowKey string) (Settings, error) {
+	path := filepath.Join(lazyvunitDir, windowKey+"_settings.json")
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		s := Settings{}
+		return s, SaveSettings(lazyvunitDir, windowKey, s)
+	}
+	if err != nil {
+		return Settings{}, err
+	}
+	var s Settings
+	if err := json.Unmarshal(data, &s); err != nil {
+		return Settings{}, err
+	}
+	return s, nil
+}
+
+// SaveSettings writes settings to .lazyvunit/<windowKey>_settings.json.
+func SaveSettings(lazyvunitDir, windowKey string, s Settings) error {
+	if err := os.MkdirAll(lazyvunitDir, 0755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(lazyvunitDir, windowKey+"_settings.json"), data, 0644)
+}

@@ -72,3 +72,35 @@ func TestEnsureGitignore_NoDuplicateEntry(t *testing.T) {
 	}
 	assert.Equal(t, 1, count)
 }
+
+func TestLoadSettings_DefaultsIfNotExist(t *testing.T) {
+	dir := t.TempDir()
+	s, err := persist.LoadSettings(dir, "src_alu")
+	require.NoError(t, err)
+	assert.Equal(t, persist.Settings{}, s) // all false
+}
+
+func TestLoadSettings_CreatesFileOnMiss(t *testing.T) {
+	dir := t.TempDir()
+	_, err := persist.LoadSettings(dir, "src_alu")
+	require.NoError(t, err)
+	_, statErr := os.Stat(filepath.Join(dir, "src_alu_settings.json"))
+	assert.NoError(t, statErr, "settings file should be created on first load")
+}
+
+func TestSaveAndLoadSettings_RoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	in := persist.Settings{Verbose: true, FailFast: true}
+	require.NoError(t, persist.SaveSettings(dir, "src_alu", in))
+	out, err := persist.LoadSettings(dir, "src_alu")
+	require.NoError(t, err)
+	assert.Equal(t, in, out)
+}
+
+func TestSaveSettings_CreatesDirectory(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "nested", ".lazyvunit")
+	err := persist.SaveSettings(dir, "key", persist.Settings{})
+	require.NoError(t, err)
+	_, statErr := os.Stat(dir)
+	assert.NoError(t, statErr)
+}
