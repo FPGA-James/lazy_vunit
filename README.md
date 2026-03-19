@@ -1,41 +1,56 @@
 # lazy_vunit
 
-A terminal UI for running [VUnit](https://vunit.github.io/) HDL simulations — inspired by [lazygit](https://github.com/jesseduffield/lazygit).
-
-Navigate your test hierarchy, run individual tests or whole suites, and watch output stream in — all without leaving the terminal.
-
-> **Disclaimer:** This project was autocreated by [Claude](https://claude.ai) (Anthropic) using strict engineering guidelines: test-driven development, spec-reviewed design documents, and per-task code quality review. All implementation decisions were made by Claude; the human guided requirements only.
+> **Personal tool — use at your own risk.**
+> This was built for my own HDL simulation workflow. It works for me, but it has not been tested across a wide range of setups, simulators, or VUnit configurations. Pull it apart, adapt it, but don't expect polish or support.
 
 ---
 
-## Screenshot
-
 ```
  lazy_vunit — /home/user/project  [alu]  verbose  xunit
-
- TESTS  ctrl+r scan          OUTPUT  compile
-┌────────────────────────┐┌────────────────────────────────────────────────┐
-│▼ alu                   ││# Running: python src/alu/run.py --verbose       │
-│  ▼ tb_alu              ││vunit_out/...                                    │
-│    ✓ test_add          ││test 'lib.tb_alu.test_add' passed                │
-│    ✗ test_sub          ││test 'lib.tb_alu.test_sub' failed                │
-│    ○ test_mul          ││                                                 │
-└────────────────────────┘└────────────────────────────────────────────────┘
- [alu] ✓ 1  ✗ 1  ○ 1  │  all: ✓ 1  ✗ 1  ○ 1  │  space run  g gui  [ ]  s settings  q quit  ? help
+ ──────────────────────────────────────────────────────────────────────────────
+ TESTS  ctrl+r scan              OUTPUT  tb_alu.test_add
+┌───────────────────────────┐   ┌──────────────────────────────────────────────┐
+│ ▼ alu                     │   │ # Running: python src/alu/run.py --verbose    │
+│   ▼ tb_alu                │   │                                               │
+│     ✓ test_add            │   │ Starting simulation of lib.tb_alu.test_add    │
+│     ✗ test_sub            │   │ test 'lib.tb_alu.test_add' passed             │
+│     ○ test_mul            │   │                                               │
+│                           │   │                                               │
+└───────────────────────────┘   └──────────────────────────────────────────────┘
+ [alu] ✓ 1  ✗ 1  ○ 1  │  all: ✓ 1  ✗ 1  ○ 1  │  space run  g gui  s settings  q quit
 ```
+
+**A keyboard-driven terminal UI for [VUnit](https://vunit.github.io/) HDL simulations.**
+Navigate your test tree, run tests with a keypress, and watch output stream live — without leaving the terminal.
+
+Inspired by [lazygit](https://github.com/jesseduffield/lazygit) — the same idea applied to HDL sim.
+
+> **AI Disclosure:** This project was built entirely by [Claude](https://claude.ai) (Anthropic) under strict engineering guidelines — test-driven development, spec-reviewed design documents, and per-task code quality review at every step. The human provided requirements and direction only.
+
+---
+
+## What It Does
+
+- **Browses** your VUnit test hierarchy as a collapsible tree
+- **Runs** a single test, a whole testbench, or everything in a directory with one keypress
+- **Streams** simulator output live into the output pane
+- **Remembers** pass/fail results between sessions
+- **Persists** run settings (flags, output path) per script
+- **Multi-window** — open multiple `run.py` scripts and switch between them
+- **GUI mode** — launch the simulator GUI for a single test with `g`
 
 ---
 
 ## Requirements
 
-| Dependency | Purpose |
+| Dependency | Notes |
 |---|---|
-| [Go 1.21+](https://golang.org/dl/) | Build the binary |
-| [Python 3](https://www.python.org/) | Required by VUnit |
-| [VUnit](https://vunit.github.io/installing.html) | HDL simulation framework (`pip install vunit-hdl`) |
-| A simulator | e.g. [GHDL](https://github.com/ghdl/ghdl), ModelSim, Questa, Riviera-PRO |
+| [Go 1.21+](https://golang.org/dl/) | To build the binary |
+| [Python 3](https://www.python.org/) | Runtime for VUnit |
+| [VUnit](https://vunit.github.io/installing.html) | `pip install vunit-hdl` |
+| A HDL simulator | [GHDL](https://github.com/ghdl/ghdl), ModelSim, Questa, Riviera-PRO, etc. |
 
-lazy_vunit does not bundle VUnit or any simulator — it invokes your existing `run.py` scripts.
+lazy_vunit doesn't bundle anything — it just invokes your existing `run.py` scripts.
 
 ---
 
@@ -47,114 +62,118 @@ cd lazy_vunit
 go build -o ~/.local/bin/lazy_vunit .
 ```
 
-Make sure `~/.local/bin` (or wherever you place the binary) is on your `$PATH`.
+Ensure `~/.local/bin` is on your `$PATH`, then just run `lazy_vunit` from inside your HDL project.
 
 ---
 
-## How to Use
+## Usage
 
-### Starting
-
-Run `lazy_vunit` from anywhere inside a git repository that contains VUnit `run.py` scripts.
+### Launching
 
 ```bash
-cd /path/to/your/hdl/project
+cd /path/to/hdl/project
 lazy_vunit
 ```
 
-**Script discovery:**
+- Searches for `run.py` files **at or below your current directory**
+- Skips Python environment folders automatically (`.venv`, `venv`, `__pycache__`, `.tox`, etc.)
+- **One script found?** Launches straight in, no picker
+- **Multiple scripts?** Shows a picker — select with `↑`/`↓`/`enter`
 
-- Only `run.py` files at or below your **current working directory** are shown.
-- If only one script is found, the tool launches directly into it — no picker needed.
-- If multiple scripts are found, a picker lets you choose which one to open.
-- Common Python environment directories are automatically excluded from discovery (`.venv`, `venv`, `env`, `.tox`, `__pycache__`, etc.).
+---
 
-### Navigation
+### Keybindings
 
-| Key | Action |
-|---|---|
-| `↑` / `↓` | Move cursor up/down through the test tree |
-| `→` | Expand a directory or benchmark node |
-| `←` | Collapse a directory or benchmark node |
-| `[` / `]` | Switch between open script windows |
-
-### Running Tests
+#### Test Tree
 
 | Key | Action |
 |---|---|
-| `space` | Run the selected test, benchmark, or directory |
-| `g` | Run the selected **test** in GUI mode (single test only) |
-| `x` / `ctrl+c` | Cancel an in-progress run |
+| `↑` / `↓` | Move cursor |
+| `→` | Expand node |
+| `←` | Collapse node |
+| `space` | Run selected test / testbench / directory |
+| `g` | Run selected test in simulator GUI *(single test only)* |
+| `x` | Cancel in-progress run |
 | `ctrl+r` | Re-scan the test hierarchy |
 
-Selecting a **directory** or **benchmark** node runs all tests under it. Results are colour-coded: `✓` passed, `✗` failed, `○` not yet run.
+#### Windows
+
+| Key | Action |
+|---|---|
+| `[` | Previous script window |
+| `]` | Next script window |
+
+#### General
+
+| Key | Action |
+|---|---|
+| `s` | Open / close settings panel |
+| `?` | Open / close keybindings help |
+| `esc` | Close any open panel |
+| `q` | Quit |
+
+---
 
 ### Settings Panel
 
-Press `s` to open the settings panel. Navigate rows with `↑`/`↓` and toggle with `space`.
+Press `s` to open. Navigate with `↑`/`↓`, toggle with `space`.
 
-| Setting | VUnit flag | Description |
+| Setting | VUnit flag | Effect |
 |---|---|---|
-| clean | `--clean` | Wipe the output directory before each run |
-| verbose | `--verbose` | Print all test output to the output pane |
-| compile only | `--compile` | Compile without running simulations |
-| elaborate only | `--elaborate` | Elaborate without running simulations |
-| fail fast | `--fail-fast` | Stop on the first test failure |
-| xunit xml | `--xunit-xml` | Write a JUnit-compatible report to `.lazyvunit/<key>_report.xml` |
-| output-path | `--output-path` | Set a custom simulation output directory (relative to git root) |
+| `clean` | `--clean` | Wipe the output directory before each run |
+| `verbose` | `--verbose` | Print all test output |
+| `compile only` | `--compile` | Compile only, skip simulation |
+| `elaborate only` | `--elaborate` | Elaborate only, skip simulation |
+| `fail fast` | `--fail-fast` | Stop on first failure |
+| `xunit xml` | `--xunit-xml` | Write JUnit report to `.lazyvunit/<key>_report.xml` |
+| `output-path` | `--output-path` | Custom output directory *(relative to git root)* |
 
-The `output-path` row is a text field. Navigate to it and press `space` to enter edit mode:
+`output-path` is a text field — navigate to it, press `space` to start typing, `enter` to confirm, `esc` to cancel.
 
-- Type the path (relative to your git root, e.g. `sim/vunit_out`)
-- `enter` — confirm and save
-- `esc` — cancel without saving
+Active settings are shown as dim indicators in the header bar:
 
-Settings are persisted per script to `.lazyvunit/<window_key>_settings.json` inside your git root.
-
-### Other Keys
-
-| Key | Action |
-|---|---|
-| `s` | Open / close the settings panel |
-| `esc` | Close any open panel |
-| `?` | Open / close the keybindings help panel |
-| `q` | Quit |
+```
+lazy_vunit — /project  [alu]  verbose  fail-fast  out:sim/vunit_out
+```
 
 ---
 
 ## Persistence
 
-lazy_vunit stores state in a `.lazyvunit/` directory at the root of your git repository:
+On first run, `.lazyvunit/` is created at your git root and added to `.gitignore`.
 
 ```
 .lazyvunit/
-  <window_key>_results.json    # last known pass/fail status per test
-  <window_key>_settings.json   # per-script settings (flags, output path)
-  <window_key>_report.xml      # xunit report (when xunit xml is enabled)
+  <key>_results.json     ← pass/fail history
+  <key>_settings.json    ← flags and output path
+  <key>_report.xml       ← xunit report (when enabled)
 ```
 
-This directory is automatically added to `.gitignore` on first run.
+`<key>` is derived from the script's path relative to the git root, with `/` replaced by `_`.
 
 ---
 
-## How run.py Scripts Are Discovered
+## Script Discovery
 
-1. lazy_vunit walks from your current directory downward looking for files named `run.py`.
-2. If none are found by name, it falls back to scanning all `.py` files for `VUnit.from_argv` and a `if __name__ == "__main__"` guard.
-3. The following directories are always skipped:
+1. Walks downward from your current directory looking for files named `run.py`
+2. If none found, falls back to scanning `.py` files for `VUnit.from_argv` + `if __name__ == "__main__"`
+3. Always skips:
 
-   `.venv` · `venv` · `env` · `.env` · `virtualenv` · `.tox` · `.nox` · `__pycache__` · `.mypy_cache` · `.ruff_cache` · `node_modules` · `.git`
+```
+.venv  venv  env  .env  virtualenv  .tox  .nox
+__pycache__  .mypy_cache  .ruff_cache  node_modules  .git
+```
 
 ---
 
 ## Inspiration
 
-lazy_vunit is directly inspired by [lazygit](https://github.com/jesseduffield/lazygit) — the idea that a well-designed terminal UI can make a complex tool feel effortless. The same philosophy applied to HDL simulation: stay in the terminal, see everything at once, run with a keypress.
+Directly inspired by [lazygit](https://github.com/jesseduffield/lazygit) by Jesse Duffield — the conviction that the right terminal UI can make a complex tool feel completely natural. lazygit does that for git. lazy_vunit tries to do the same for HDL simulation.
 
 ---
 
 ## Built With
 
-- [Bubble Tea](https://github.com/charmbracelet/bubbletea) — terminal UI framework (Elm architecture)
-- [Lip Gloss](https://github.com/charmbracelet/lipgloss) — terminal styling and layout
-- [VUnit](https://vunit.github.io/) — HDL simulation and test framework
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea) — terminal UI framework
+- [Lip Gloss](https://github.com/charmbracelet/lipgloss) — terminal layout and styling
+- [VUnit](https://vunit.github.io/) — HDL simulation framework
