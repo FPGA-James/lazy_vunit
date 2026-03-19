@@ -61,6 +61,10 @@ func NewWindowModel(script finder.RunScript, allScripts []finder.RunScript, gitR
 // Used to clamp the settings panel cursor.
 func SettingCount() int { return 6 }
 
+// TotalSettingRows returns the total number of rows in the settings panel
+// (6 boolean toggles + 1 output-path text row).
+func TotalSettingRows() int { return 7 }
+
 // ToggleSetting flips the setting at the given index and persists the change.
 // CompileOnly (2) and ElaborateOnly (3) are mutually exclusive.
 func (w *WindowModel) ToggleSetting(idx int) {
@@ -84,6 +88,12 @@ func (w *WindowModel) ToggleSetting(idx int) {
 	case 5:
 		w.Settings.XUnitXML = !w.Settings.XUnitXML
 	}
+	_ = persist.SaveSettings(w.LazyDir, w.Script.WindowKey, w.Settings)
+}
+
+// SetOutputPath sets the output path and persists the change.
+func (w *WindowModel) SetOutputPath(path string) {
+	w.Settings.OutputPath = path
 	_ = persist.SaveSettings(w.LazyDir, w.Script.WindowKey, w.Settings)
 }
 
@@ -145,6 +155,9 @@ func (w *WindowModel) StartRun(guiMode bool) tea.Cmd {
 			args = append(args, "--elaborate")
 			w.OutputTitle = "elaborate"
 		}
+		if w.Settings.OutputPath != "" {
+			args = append(args, "--output-path", filepath.Join(w.GitRoot, w.Settings.OutputPath))
+		}
 		w.Output = []string{fmt.Sprintf("# Running: python %s %s", w.Script.AbsPath, strings.Join(args, " "))}
 		w.State = WinStateRunning
 		cmd, cancelFn, ch := runner.Run(w.Script.AbsPath, args)
@@ -181,6 +194,9 @@ func (w *WindowModel) StartRun(guiMode bool) tea.Cmd {
 	if w.Settings.XUnitXML {
 		reportPath := filepath.Join(w.LazyDir, w.Script.WindowKey+"_report.xml")
 		args = append(args, "--xunit-xml", reportPath)
+	}
+	if w.Settings.OutputPath != "" {
+		args = append(args, "--output-path", filepath.Join(w.GitRoot, w.Settings.OutputPath))
 	}
 
 	for _, name := range fullNamesFromNode(node) {

@@ -48,5 +48,15 @@ func TestWindowModel_SettingCount(t *testing.T) {
 	assert.Equal(t, 6, ui.SettingCount())
 }
 
+func TestWindowModel_SetOutputPath(t *testing.T) {
+	w := makeWindow()
+	w.SetOutputPath("sim_out")
+	assert.Equal(t, "sim_out", w.Settings.OutputPath)
+}
+
+func TestWindowModel_TotalSettingRows(t *testing.T) {
+	assert.Equal(t, 7, ui.TotalSettingRows())
+}
+
 // Compile-time check: persist.Settings must be accessible via WindowModel.
 var _ persist.Settings = persist.Settings{}
