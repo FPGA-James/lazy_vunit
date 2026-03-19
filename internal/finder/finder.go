@@ -29,15 +29,32 @@ func FindGitRoot(dir string) string {
 	}
 }
 
+// skipDirs is the set of directory names that are skipped during script discovery.
+// These are typically Python virtual environment or tool-cache directories that
+// should never contain user-authored VUnit run scripts.
+var skipDirs = map[string]bool{
+	".venv": true, "venv": true, "env": true, ".env": true,
+	"virtualenv": true, ".tox": true, ".nox": true,
+	"__pycache__": true, ".mypy_cache": true, ".ruff_cache": true,
+	"node_modules": true, ".git": true,
+}
+
 func FindRunScripts(root string) ([]RunScript, error) {
 	var scripts []RunScript
 
+	skip := func(d os.DirEntry) bool {
+		return d.IsDir() && skipDirs[d.Name()]
+	}
+
 	// First pass: files named run.py
 	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
+		if err != nil {
 			return err
 		}
-		if filepath.Base(path) == "run.py" {
+		if skip(d) {
+			return filepath.SkipDir
+		}
+		if !d.IsDir() && filepath.Base(path) == "run.py" {
 			scripts = append(scripts, makeScript(root, path))
 		}
 		return nil
@@ -49,10 +66,13 @@ func FindRunScripts(root string) ([]RunScript, error) {
 	// Fallback: search .py files for VUnit.from_argv + __main__ guard
 	if len(scripts) == 0 {
 		err = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
-			if err != nil || d.IsDir() || !strings.HasSuffix(path, ".py") {
+			if err != nil {
 				return err
 			}
-			if fileContainsVUnit(path) {
+			if skip(d) {
+				return filepath.SkipDir
+			}
+			if !d.IsDir() && strings.HasSuffix(path, ".py") && fileContainsVUnit(path) {
 				scripts = append(scripts, makeScript(root, path))
 			}
 			return nil
