@@ -2,6 +2,8 @@
 package ui
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/lazyvunit/lazy_vunit/internal/finder"
@@ -29,6 +31,8 @@ type AppModel struct {
 	showHelp       bool
 	showSettings   bool
 	settingsCursor int
+	editingPath    bool
+	pathBuf        string
 }
 
 func NewAppModel(scripts []finder.RunScript, gitRoot, cwd string) AppModel {
@@ -59,6 +63,9 @@ func (m AppModel) ActiveSettings() persist.Settings {
 	}
 	return m.activeWin().Settings
 }
+
+func (m AppModel) EditingPath() bool { return m.editingPath }
+func (m AppModel) PathBuf() string   { return m.pathBuf }
 
 func (m AppModel) Init() tea.Cmd {
 	if m.state == StateScanning && len(m.windows) > 0 {
@@ -120,6 +127,26 @@ func (m AppModel) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	keys := DefaultKeys
 
+	if m.editingPath {
+		switch msg.Type {
+		case tea.KeyEnter:
+			m.activeWin().SetOutputPath(strings.TrimSpace(m.pathBuf))
+			m.editingPath = false
+			m.pathBuf = ""
+		case tea.KeyEsc:
+			m.editingPath = false
+			m.pathBuf = ""
+		case tea.KeyBackspace, tea.KeyDelete:
+			if len(m.pathBuf) > 0 {
+				runes := []rune(m.pathBuf)
+				m.pathBuf = string(runes[:len(runes)-1])
+			}
+		case tea.KeyRunes:
+			m.pathBuf += string(msg.Runes)
+		}
+		return m, nil
+	}
+
 	switch {
 	case key.Matches(msg, keys.Quit):
 		return m, tea.Quit
@@ -144,11 +171,16 @@ func (m AppModel) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.settingsCursor--
 			}
 		case key.Matches(msg, keys.Down):
-			if m.settingsCursor < SettingCount()-1 {
+			if m.settingsCursor < TotalSettingRows()-1 {
 				m.settingsCursor++
 			}
 		case key.Matches(msg, keys.Run): // space
-			m.activeWin().ToggleSetting(m.settingsCursor)
+			if m.settingsCursor == SettingCount() { // output-path row (index 6)
+				m.editingPath = true
+				m.pathBuf = m.activeWin().Settings.OutputPath
+			} else {
+				m.activeWin().ToggleSetting(m.settingsCursor)
+			}
 		}
 		return m, nil
 

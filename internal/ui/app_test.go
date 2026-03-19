@@ -98,3 +98,73 @@ func TestAppModel_SettingsToggleViaSpack(t *testing.T) {
 	m4, _ := m3.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
 	assert.True(t, m4.(ui.AppModel).ActiveSettings().Clean)
 }
+
+// openSettingsAt opens the settings panel and navigates the cursor to the given row index.
+func openSettingsAt(t *testing.T, row int) ui.AppModel {
+	t.Helper()
+	m := ui.NewAppModel([]finder.RunScript{singleScript()}, "/p", "/p")
+	m2, _ := m.Update(ui.ScanDoneMsg{})
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	cur := m3.(ui.AppModel)
+	for i := 0; i < row; i++ {
+		m4, _ := cur.Update(tea.KeyMsg{Type: tea.KeyDown})
+		cur = m4.(ui.AppModel)
+	}
+	return cur
+}
+
+func TestAppModel_SettingsCursorReachesRow6(t *testing.T) {
+	m := openSettingsAt(t, 6)
+	assert.Equal(t, 6, m.SettingsCursor())
+}
+
+func TestAppModel_OutputPathEditMode(t *testing.T) {
+	m := openSettingsAt(t, 6)
+	m2, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
+	assert.True(t, m2.(ui.AppModel).EditingPath())
+}
+
+func TestAppModel_OutputPathTyping(t *testing.T) {
+	m := openSettingsAt(t, 6)
+	m2, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")}) // enter edit
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	m4, _ := m3.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("i")})
+	m5, _ := m4.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("m")})
+	assert.Equal(t, "sim", m5.(ui.AppModel).PathBuf())
+}
+
+func TestAppModel_OutputPathBackspace(t *testing.T) {
+	m := openSettingsAt(t, 6)
+	m2, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")}) // enter edit
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	m4, _ := m3.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyBackspace}) // remove 's'
+	assert.Equal(t, "", m4.(ui.AppModel).PathBuf())
+	// backspace on empty buffer: no panic, buffer stays empty
+	m5, _ := m4.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyBackspace})
+	assert.Equal(t, "", m5.(ui.AppModel).PathBuf())
+}
+
+func TestAppModel_OutputPathConfirm(t *testing.T) {
+	m := openSettingsAt(t, 6)
+	m2, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")}) // enter edit
+	// type "sim " (trailing space to test trim)
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	m4, _ := m3.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("i")})
+	m5, _ := m4.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("m")})
+	m6, _ := m5.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
+	// confirm with enter
+	m7, _ := m6.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyEnter})
+	assert.False(t, m7.(ui.AppModel).EditingPath())
+	assert.Equal(t, "", m7.(ui.AppModel).PathBuf())
+	assert.Equal(t, "sim", m7.(ui.AppModel).ActiveSettings().OutputPath) // trailing space trimmed
+}
+
+func TestAppModel_OutputPathCancel(t *testing.T) {
+	m := openSettingsAt(t, 6)
+	m2, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")}) // enter edit
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	// cancel with esc
+	m4, _ := m3.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyEsc})
+	assert.False(t, m4.(ui.AppModel).EditingPath())
+	assert.Equal(t, "", m4.(ui.AppModel).ActiveSettings().OutputPath) // value unchanged
+}
