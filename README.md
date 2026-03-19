@@ -7,6 +7,8 @@
 > **Personal tool — use at your own risk.**
 > This was built for my own HDL simulation workflow. It works for me, but it has not been tested across a wide range of setups, simulators, or VUnit configurations. Pull it apart, adapt it, but don't expect polish or support.
 
+> **Linux and macOS only.** Windows is not supported. The tool relies on Unix process signals and a Unix-style terminal environment. No Windows builds are provided.
+
 ---
 
 ```
