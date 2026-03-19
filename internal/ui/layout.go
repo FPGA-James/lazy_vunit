@@ -209,8 +209,11 @@ func RenderSettings(m AppModel) string {
 		} else {
 			displayVal = valueStr
 		}
-		paddedVal := lipgloss.NewStyle().Width(22).Render(displayVal)
-	row := fmt.Sprintf("  %-16s %s %s", "output-path", paddedVal, StyleSubtle.Render("relative to git root"))
+		visibleLen := ansi.StringWidth(displayVal)
+		if visibleLen < 22 {
+			displayVal += strings.Repeat(" ", 22-visibleLen)
+		}
+		row := fmt.Sprintf("  %-16s %s %s", "output-path", displayVal, StyleSubtle.Render("relative to git root"))
 		if cursor == SettingCount() {
 			row = StyleCursor.Render(row)
 		}
