@@ -50,7 +50,7 @@ The value field shows the current buffer with a block cursor `█` appended:
 - `enter` saves: trims whitespace, calls `SetOutputPath(pathBuf)`, exits edit mode.
 - `esc` cancels: discards `pathBuf`, exits edit mode. The saved value is unchanged.
 
-**Outer keys while editing:** `q` (quit) and `s`/`esc` are consumed by the editing handler before they reach the outer switch, so only `enter` and `esc` exit the mode.
+**Outer keys while editing:** Because the editing `if` block always `return m, nil` after the inner switch, all key types are consumed before the outer switch. Printable characters (including `q`, `s`) hit `tea.KeyRunes` and are appended to `pathBuf`. Only `enter` and `esc` have special cases that exit edit mode.
 
 ## Header Indicator
 
@@ -69,6 +69,7 @@ internal/persist/persist.go   — add OutputPath string field to Settings
 internal/ui/window.go         — add SetOutputPath(path string), TotalSettingRows() int, update StartRun
 internal/ui/app.go            — add editingPath bool + pathBuf string to AppModel;
                                 add EditingPath()/PathBuf() accessors;
+                                add "strings" import;
                                 handle editingPath keys before outer switch;
                                 extend cursor clamp to TotalSettingRows()-1;
                                 start edit on space when cursor == SettingCount()
@@ -159,6 +160,7 @@ if m.editingPath {
     case tea.KeyEnter:
         m.activeWin().SetOutputPath(strings.TrimSpace(m.pathBuf))
         m.editingPath = false
+        m.pathBuf = ""
     case tea.KeyEsc:
         m.editingPath = false
         m.pathBuf = ""
@@ -252,6 +254,7 @@ if s.OutputPath != "" {
 **app:**
 - `TestAppModel_OutputPathEditMode` — open settings, navigate to row 6, press space, verify `EditingPath() == true`.
 - `TestAppModel_OutputPathTyping` — while editing, send rune keys, verify `PathBuf()` accumulates.
-- `TestAppModel_OutputPathConfirm` — while editing, send enter, verify `EditingPath() == false` and `ActiveSettings().OutputPath` updated.
+- `TestAppModel_OutputPathBackspace` — while editing with a non-empty buffer, send backspace, verify last rune removed; send backspace on empty buffer, verify no panic.
+- `TestAppModel_OutputPathConfirm` — while editing with leading/trailing spaces, send enter, verify `EditingPath() == false`, `pathBuf` cleared, and `ActiveSettings().OutputPath` is trimmed.
 - `TestAppModel_OutputPathCancel` — while editing, send esc, verify `EditingPath() == false` and value unchanged.
 - `TestAppModel_SettingsCursorReachesRow6` — pressing down 6 times from row 0 reaches row 6.
