@@ -244,6 +244,9 @@ func (m AppModel) View() string {
 		if len(m.windows) == 0 {
 			return ""
 		}
+		if m.showSettings {
+			return RenderSettings(m)
+		}
 		if m.showHelp {
 			return RenderHelp(m)
 		}
