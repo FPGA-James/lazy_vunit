@@ -39,11 +39,13 @@ type WindowModel struct {
 	CancelFn    runner.CancelFunc
 	PendingArgs []string           // remaining batch args
 	Results     persist.Store
+	Settings    persist.Settings  // per-window VUnit run flags
 }
 
 func NewWindowModel(script finder.RunScript, allScripts []finder.RunScript, gitRoot string) WindowModel {
 	lazyDir := filepath.Join(gitRoot, ".lazyvunit")
 	results, _ := persist.Load(lazyDir, script.WindowKey)
+	settings, _ := persist.LoadSettings(lazyDir, script.WindowKey)
 	return WindowModel{
 		Script:     script,
 		AllScripts: allScripts,
@@ -51,7 +53,38 @@ func NewWindowModel(script finder.RunScript, allScripts []finder.RunScript, gitR
 		LazyDir:    lazyDir,
 		State:      WinStateScanning,
 		Results:    results,
+		Settings:   settings,
 	}
+}
+
+// SettingCount returns the total number of configurable settings.
+// Used to clamp the settings panel cursor.
+func SettingCount() int { return 6 }
+
+// ToggleSetting flips the setting at the given index and persists the change.
+// CompileOnly (2) and ElaborateOnly (3) are mutually exclusive.
+func (w *WindowModel) ToggleSetting(idx int) {
+	switch idx {
+	case 0:
+		w.Settings.Clean = !w.Settings.Clean
+	case 1:
+		w.Settings.Verbose = !w.Settings.Verbose
+	case 2:
+		w.Settings.CompileOnly = !w.Settings.CompileOnly
+		if w.Settings.CompileOnly {
+			w.Settings.ElaborateOnly = false
+		}
+	case 3:
+		w.Settings.ElaborateOnly = !w.Settings.ElaborateOnly
+		if w.Settings.ElaborateOnly {
+			w.Settings.CompileOnly = false
+		}
+	case 4:
+		w.Settings.FailFast = !w.Settings.FailFast
+	case 5:
+		w.Settings.XUnitXML = !w.Settings.XUnitXML
+	}
+	_ = persist.SaveSettings(w.LazyDir, w.Script.WindowKey, w.Settings)
 }
 
 // DisplayName returns the window's display name (leaf or full reldir on collision).
@@ -95,6 +128,33 @@ func (w *WindowModel) StartRun(guiMode bool) tea.Cmd {
 	if w.Tree == nil || w.State != WinStateReady {
 		return nil
 	}
+
+	// Compile-only / elaborate-only: run without test patterns, no GUI
+	if w.Settings.CompileOnly || w.Settings.ElaborateOnly {
+		var args []string
+		if w.Settings.Clean {
+			args = append(args, "--clean")
+		}
+		if w.Settings.Verbose {
+			args = append(args, "--verbose")
+		}
+		if w.Settings.CompileOnly {
+			args = append(args, "--compile")
+			w.OutputTitle = "compile"
+		} else {
+			args = append(args, "--elaborate")
+			w.OutputTitle = "elaborate"
+		}
+		w.Output = []string{fmt.Sprintf("# Running: python %s %s", w.Script.AbsPath, strings.Join(args, " "))}
+		w.State = WinStateRunning
+		cmd, cancelFn, ch := runner.Run(w.Script.AbsPath, args)
+		w.CancelFn = cancelFn
+		w.RunnerCh = ch
+		w.PendingArgs = nil
+		return cmd
+	}
+
+	// Normal test run
 	node := w.Tree.CursorNode()
 	if node == nil {
 		return nil
@@ -104,12 +164,25 @@ func (w *WindowModel) StartRun(guiMode bool) tea.Cmd {
 		return nil
 	}
 
-	args := w.Tree.RunPattern()
+	var args []string
+	if w.Settings.Clean {
+		args = append(args, "--clean")
+	}
+	args = append(args, w.Tree.RunPattern()...)
 	if guiMode {
 		args = append(args, "--gui")
 	}
+	if w.Settings.Verbose {
+		args = append(args, "--verbose")
+	}
+	if w.Settings.FailFast {
+		args = append(args, "--fail-fast")
+	}
+	if w.Settings.XUnitXML {
+		reportPath := filepath.Join(w.LazyDir, w.Script.WindowKey+"_report.xml")
+		args = append(args, "--xunit-xml", reportPath)
+	}
 
-	// Mark all selected leaf tests as Running
 	for _, name := range fullNamesFromNode(node) {
 		w.Tree.SetStatus(name, tree.Running)
 	}
@@ -123,7 +196,6 @@ func (w *WindowModel) StartRun(guiMode bool) tea.Cmd {
 	w.CancelFn = cancelFn
 	w.RunnerCh = ch
 	w.PendingArgs = remaining
-
 	return firstCmd
 }
 
