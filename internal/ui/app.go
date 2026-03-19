@@ -158,6 +158,8 @@ func (m AppModel) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.state == StateMain {
 			m.showSettings = !m.showSettings
 			m.settingsCursor = 0
+			m.editingPath = false
+			m.pathBuf = ""
 		}
 
 	case key.Matches(msg, keys.Escape):
