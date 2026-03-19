@@ -71,12 +71,13 @@ func EnsureGitignore(gitRoot string) error {
 
 // Settings holds per-window VUnit run flags.
 type Settings struct {
-	Clean         bool `json:"clean"`
-	Verbose       bool `json:"verbose"`
-	CompileOnly   bool `json:"compile_only"`
-	ElaborateOnly bool `json:"elaborate_only"`
-	FailFast      bool `json:"fail_fast"`
-	XUnitXML      bool `json:"xunit_xml"`
+	Clean         bool   `json:"clean"`
+	Verbose       bool   `json:"verbose"`
+	CompileOnly   bool   `json:"compile_only"`
+	ElaborateOnly bool   `json:"elaborate_only"`
+	FailFast      bool   `json:"fail_fast"`
+	XUnitXML      bool   `json:"xunit_xml"`
+	OutputPath    string `json:"output_path"`
 }
 
 // LoadSettings reads .lazyvunit/<windowKey>_settings.json.

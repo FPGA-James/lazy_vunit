@@ -104,3 +104,12 @@ func TestSaveSettings_CreatesDirectory(t *testing.T) {
 	_, statErr := os.Stat(dir)
 	assert.NoError(t, statErr)
 }
+
+func TestSettings_OutputPath_RoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	in := persist.Settings{OutputPath: "sim/vunit_out"}
+	require.NoError(t, persist.SaveSettings(dir, "src_alu", in))
+	out, err := persist.LoadSettings(dir, "src_alu")
+	require.NoError(t, err)
+	assert.Equal(t, "sim/vunit_out", out.OutputPath)
+}
