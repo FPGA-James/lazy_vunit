@@ -163,6 +163,8 @@ func (m AppModel) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, keys.Escape):
 		m.showSettings = false
 		m.showHelp = false
+		m.editingPath = false
+		m.pathBuf = ""
 
 	case m.showSettings:
 		switch {

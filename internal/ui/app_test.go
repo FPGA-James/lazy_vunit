@@ -168,3 +168,12 @@ func TestAppModel_OutputPathCancel(t *testing.T) {
 	assert.False(t, m4.(ui.AppModel).EditingPath())
 	assert.Equal(t, "", m4.(ui.AppModel).ActiveSettings().OutputPath) // value unchanged
 }
+
+func TestAppModel_OutputPathSKeyDuringEditAppends(t *testing.T) {
+	m := openSettingsAt(t, 6)
+	m2, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")}) // enter edit
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	assert.True(t, m3.(ui.AppModel).EditingPath())  // still editing
+	assert.True(t, m3.(ui.AppModel).ShowSettings()) // panel still open
+	assert.Equal(t, "s", m3.(ui.AppModel).PathBuf()) // 's' appended
+}
