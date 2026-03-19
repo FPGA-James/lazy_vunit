@@ -147,10 +147,8 @@ func (m AppModel) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			if m.settingsCursor < SettingCount()-1 {
 				m.settingsCursor++
 			}
-		case key.Matches(msg, keys.Run): // space = Run key
+		case key.Matches(msg, keys.Run): // space
 			m.activeWin().ToggleSetting(m.settingsCursor)
-		case key.Matches(msg, keys.Escape), key.Matches(msg, keys.Settings):
-			m.showSettings = false
 		}
 		return m, nil
 

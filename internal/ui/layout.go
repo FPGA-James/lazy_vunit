@@ -41,12 +41,24 @@ func renderHeader(m AppModel, width int) string {
 	s := win.Settings
 
 	var flags []string
-	if s.Clean         { flags = append(flags, StyleFailed.Render("clean")) }
-	if s.Verbose       { flags = append(flags, StyleRunning.Render("verbose")) }
-	if s.CompileOnly   { flags = append(flags, StyleRunning.Render("compile")) }
-	if s.ElaborateOnly { flags = append(flags, StyleRunning.Render("elaborate")) }
-	if s.FailFast      { flags = append(flags, StyleFailed.Render("fail-fast")) }
-	if s.XUnitXML      { flags = append(flags, StylePassed.Render("xunit")) }
+	if s.Clean {
+		flags = append(flags, StyleFailed.Render("clean"))
+	}
+	if s.Verbose {
+		flags = append(flags, StyleRunning.Render("verbose"))
+	}
+	if s.CompileOnly {
+		flags = append(flags, StyleRunning.Render("compile"))
+	}
+	if s.ElaborateOnly {
+		flags = append(flags, StyleRunning.Render("elaborate"))
+	}
+	if s.FailFast {
+		flags = append(flags, StyleFailed.Render("fail-fast"))
+	}
+	if s.XUnitXML {
+		flags = append(flags, StylePassed.Render("xunit"))
+	}
 
 	title := fmt.Sprintf(" lazy_vunit — %s  [%s]", m.gitRoot, win.DisplayName())
 	if len(flags) > 0 {
@@ -150,12 +162,12 @@ type settingItem struct {
 }
 
 var settingItems = []settingItem{
-	{"clean",          "wipe output dir before run",           func(s persist.Settings) bool { return s.Clean }},
-	{"verbose",        "print all test output",                func(s persist.Settings) bool { return s.Verbose }},
-	{"compile only",   "compile only, skip simulation",        func(s persist.Settings) bool { return s.CompileOnly }},
-	{"elaborate only", "elaborate only, skip simulation",      func(s persist.Settings) bool { return s.ElaborateOnly }},
-	{"fail fast",      "stop on first failure",                func(s persist.Settings) bool { return s.FailFast }},
-	{"xunit xml",      "write report to .lazyvunit/<key>.xml", func(s persist.Settings) bool { return s.XUnitXML }},
+	{"clean", "wipe output dir before run", func(s persist.Settings) bool { return s.Clean }},
+	{"verbose", "print all test output", func(s persist.Settings) bool { return s.Verbose }},
+	{"compile only", "compile only, skip simulation", func(s persist.Settings) bool { return s.CompileOnly }},
+	{"elaborate only", "elaborate only, skip simulation", func(s persist.Settings) bool { return s.ElaborateOnly }},
+	{"fail fast", "stop on first failure", func(s persist.Settings) bool { return s.FailFast }},
+	{"xunit xml", "write report to .lazyvunit/<key>.xml", func(s persist.Settings) bool { return s.XUnitXML }},
 }
 
 // RenderSettings renders the settings toggles as a floating box over the main layout.
@@ -190,8 +202,12 @@ func RenderSettings(m AppModel) string {
 	boxH := lipgloss.Height(box)
 	x := (m.termWidth - boxW) / 2
 	y := (m.termHeight - boxH) / 2
-	if x < 0 { x = 0 }
-	if y < 0 { y = 0 }
+	if x < 0 {
+		x = 0
+	}
+	if y < 0 {
+		y = 0
+	}
 
 	return placeOverlay(x, y, box, bg)
 }
@@ -215,7 +231,7 @@ func RenderHelp(m AppModel) string {
 		{keys.Quit.Help().Key, keys.Quit.Help().Desc},
 		{keys.Help.Help().Key, keys.Help.Help().Desc},
 		{keys.Settings.Help().Key, keys.Settings.Help().Desc},
-		{keys.Escape.Help().Key,   keys.Escape.Help().Desc},
+		{keys.Escape.Help().Key, keys.Escape.Help().Desc},
 	}
 
 	var sb strings.Builder
