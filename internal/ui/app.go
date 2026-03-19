@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/lazyvunit/lazy_vunit/internal/finder"
+	"github.com/lazyvunit/lazy_vunit/internal/persist"
 	"github.com/lazyvunit/lazy_vunit/internal/runner"
 )
 
@@ -25,7 +26,9 @@ type AppModel struct {
 	gitRoot    string
 	termWidth  int
 	termHeight int
-	showHelp   bool
+	showHelp      bool
+	showSettings  bool
+	settingsCursor int
 }
 
 func NewAppModel(scripts []finder.RunScript, gitRoot, cwd string) AppModel {
@@ -47,6 +50,15 @@ func NewAppModel(scripts []finder.RunScript, gitRoot, cwd string) AppModel {
 func (m AppModel) AppState() AppStateKind   { return m.state }
 func (m AppModel) ActiveWindowIndex() int   { return m.activeIdx }
 func (m *AppModel) activeWin() *WindowModel { return &m.windows[m.activeIdx] }
+
+func (m AppModel) ShowSettings() bool  { return m.showSettings }
+func (m AppModel) SettingsCursor() int { return m.settingsCursor }
+func (m AppModel) ActiveSettings() persist.Settings {
+	if len(m.windows) == 0 {
+		return persist.Settings{}
+	}
+	return m.activeWin().Settings
+}
 
 func (m AppModel) Init() tea.Cmd {
 	if m.state == StateScanning && len(m.windows) > 0 {
@@ -114,6 +126,33 @@ func (m AppModel) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case key.Matches(msg, keys.Help):
 		m.showHelp = !m.showHelp
+
+	case key.Matches(msg, keys.Settings):
+		if m.state == StateMain {
+			m.showSettings = !m.showSettings
+			m.settingsCursor = 0
+		}
+
+	case key.Matches(msg, keys.Escape):
+		m.showSettings = false
+		m.showHelp = false
+
+	case m.showSettings:
+		switch {
+		case key.Matches(msg, keys.Up):
+			if m.settingsCursor > 0 {
+				m.settingsCursor--
+			}
+		case key.Matches(msg, keys.Down):
+			if m.settingsCursor < SettingCount()-1 {
+				m.settingsCursor++
+			}
+		case key.Matches(msg, keys.Run): // space = Run key
+			m.activeWin().ToggleSetting(m.settingsCursor)
+		case key.Matches(msg, keys.Escape), key.Matches(msg, keys.Settings):
+			m.showSettings = false
+		}
+		return m, nil
 
 	case m.state != StateMain:
 		return m, nil
@@ -204,6 +243,9 @@ func (m AppModel) View() string {
 	case StateMain:
 		if len(m.windows) == 0 {
 			return ""
+		}
+		if m.showHelp {
+			return RenderHelp(m)
 		}
 		return RenderMain(m)
 	}

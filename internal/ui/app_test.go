@@ -65,3 +65,36 @@ func TestAppModel_SwitchWindowsWithBrackets(t *testing.T) {
 	m4, _ := m3.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("]")})
 	assert.Equal(t, 1, m4.(ui.AppModel).ActiveWindowIndex())
 }
+
+func TestAppModel_SettingsOpenWithS(t *testing.T) {
+	m := ui.NewAppModel([]finder.RunScript{singleScript()}, "/p", "/p")
+	m2, _ := m.Update(ui.ScanDoneMsg{})
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	assert.True(t, m3.(ui.AppModel).ShowSettings())
+}
+
+func TestAppModel_SettingsCloseWithS(t *testing.T) {
+	m := ui.NewAppModel([]finder.RunScript{singleScript()}, "/p", "/p")
+	m2, _ := m.Update(ui.ScanDoneMsg{})
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	m4, _ := m3.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	assert.False(t, m4.(ui.AppModel).ShowSettings())
+}
+
+func TestAppModel_SettingsCursorNavigates(t *testing.T) {
+	m := ui.NewAppModel([]finder.RunScript{singleScript()}, "/p", "/p")
+	m2, _ := m.Update(ui.ScanDoneMsg{})
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	m4, _ := m3.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyDown})
+	assert.Equal(t, 1, m4.(ui.AppModel).SettingsCursor())
+}
+
+func TestAppModel_SettingsToggleViaSpack(t *testing.T) {
+	m := ui.NewAppModel([]finder.RunScript{singleScript()}, "/p", "/p")
+	m2, _ := m.Update(ui.ScanDoneMsg{})
+	// open settings
+	m3, _ := m2.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("s")})
+	// space toggles row 0 (Clean)
+	m4, _ := m3.(ui.AppModel).Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
+	assert.True(t, m4.(ui.AppModel).ActiveSettings().Clean)
+}

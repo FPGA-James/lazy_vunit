@@ -16,6 +16,8 @@ type KeyMap struct {
 	Cancel   key.Binding
 	Quit     key.Binding
 	Help     key.Binding
+	Settings key.Binding
+	Escape   key.Binding
 }
 
 var DefaultKeys = KeyMap{
@@ -29,6 +31,8 @@ var DefaultKeys = KeyMap{
 	NextWin: key.NewBinding(key.WithKeys("]"), key.WithHelp("]", "next window")),
 	Rescan:  key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("ctrl+r", "rescan")),
 	Cancel:  key.NewBinding(key.WithKeys("ctrl+c", "x"), key.WithHelp("x", "cancel")),
-	Quit:    key.NewBinding(key.WithKeys("q"), key.WithHelp("q", "quit")),
-	Help:    key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
+	Quit:     key.NewBinding(key.WithKeys("q"), key.WithHelp("q", "quit")),
+	Help:     key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
+	Settings: key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "settings")),
+	Escape:   key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "close")),
 }
